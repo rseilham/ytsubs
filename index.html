@@ -1,0 +1,138 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>ljs2023 Subs</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <!-- Optional: makes iOS treat this nicer when added to Home Screen -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
+    <meta name="apple-mobile-web-app-title" content="ljs2023 Subs">
+
+    <style>
+      body {
+        font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+        background: #000;
+        color: #fff;
+        text-align: center;
+        margin: 0;
+        padding-top: 30px;
+      }
+
+      .header {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 12px;
+        padding: 0 16px;
+      }
+
+      .logo-row {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .yt-badge {
+        width: 40px;
+        height: 28px;
+        background: #ff0000; /* YouTube red */
+        border-radius: 6px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .yt-badge .triangle {
+        width: 0;
+        height: 0;
+        border-left: 14px solid #ffffff;
+        border-top: 9px solid transparent;
+        border-bottom: 9px solid transparent;
+      }
+
+      .title-text {
+        font-size: 24px;
+        font-weight: 700;
+        letter-spacing: 0.03em;
+        color: #ff0000; /* YouTube red for text */
+      }
+
+      #count {
+        font-size: clamp(64px, 18vw, 120px);
+        font-weight: 800;
+        margin: 24px 0 8px;
+      }
+
+      #updated {
+        font-size: 14px;
+        margin-top: 6px;
+        color: #aaaaaa; /* light gray */
+      }
+
+      #error {
+        font-size: 14px;
+        margin-top: 8px;
+        color: #ff6666;
+        min-height: 20px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="header">
+      <div class="logo-row">
+        <div class="yt-badge">
+          <div class="triangle"></div>
+        </div>
+        <div class="title-text">ljs2023 Subs</div>
+      </div>
+    </div>
+
+    <div id="count">–</div>
+    <div id="updated">Last updated: —</div>
+    <div id="error"></div>
+
+    <script>
+      // Your Apps Script Web App URL (no secrets in here)
+      const BACKEND_URL = 'https://script.google.com/macros/s/AKfycbySjshcmfGbIRfiGXmwChLhB4Csa5L-rENGPd8gdG7newEkcM85ZdqfkVm6YmNS_EYh/exec';
+
+      async function fetchSubscriberCount() {
+        const countEl   = document.getElementById('count');
+        const updatedEl = document.getElementById('updated');
+        const errorEl   = document.getElementById('error');
+
+        try {
+          errorEl.textContent = '';
+          const resp = await fetch(BACKEND_URL, { cache: 'no-store' });
+          const data = await resp.json();
+
+          if (data.error) {
+            countEl.textContent = 'N/A';
+            errorEl.textContent = data.error;
+            return;
+          }
+
+          if (!data.subscriberCount) {
+            countEl.textContent = 'N/A';
+            errorEl.textContent = 'No subscriberCount in response';
+            return;
+          }
+
+          countEl.textContent = data.subscriberCount.toString();
+
+          const now = new Date();
+          updatedEl.textContent = 'Last updated: ' + now.toLocaleTimeString();
+        } catch (err) {
+          console.error(err);
+          countEl.textContent = '–';
+          errorEl.textContent = 'Error talking to backend';
+        }
+      }
+
+      // Initial load and refresh every 60 seconds
+      fetchSubscriberCount();
+      setInterval(fetchSubscriberCount, 60000);
+    </script>
+  </body>
+</html>
