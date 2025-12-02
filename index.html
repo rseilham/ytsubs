@@ -60,9 +60,18 @@
       }
 
 #count {
-  font-size: clamp(96px, 30vw, 200px);
+  font-size: 96px;      /* fallback */
   font-weight: 800;
   margin: 24px 0 8px;
+  line-height: 1;
+}
+
+/* Landscape: make the number fill ~50% of the screen height */
+@media (orientation: landscape) {
+  #count {
+    font-size: 45vh;    /* 45% of viewport height */
+    margin: 8px 0 4px;
+  }
 }
 
       #updated {
