@@ -102,46 +102,69 @@
     <div id="updated">Last updated: —</div>
     <div id="error"></div>
 
-    <script>
-      // Your Apps Script Web App URL (no secrets in here)
+<script>
+  // Your Apps Script Web App URL (no API key here)
       const BACKEND_URL = 'https://script.google.com/macros/s/AKfycbySjshcmfGbIRfiGXmwChLhB4Csa5L-rENGPd8gdG7newEkcM85ZdqfkVm6YmNS_EYh/exec';
 
-      async function fetchSubscriberCount() {
-        const countEl   = document.getElementById('count');
-        const updatedEl = document.getElementById('updated');
-        const errorEl   = document.getElementById('error');
+  // Format subscribers into YouTube-style display: 1.23K, 4.8M, etc.
+  function formatSubs(n) {
+    n = Number(n);
 
-        try {
-          errorEl.textContent = '';
-          const resp = await fetch(BACKEND_URL, { cache: 'no-store' });
-          const data = await resp.json();
+    if (n < 1000) {
+      return n.toString();                      // 0–999 → exact number
+    } else if (n < 1000000) {
+      return (n / 1000).toFixed(2) + 'K';       // 1,000–999,999 → "X.XXK"
+    } else if (n < 1000000000) {
+      return (n / 1000000).toFixed(2) + 'M';    // 1,000,000–999,999,999 → "X.XXM"
+    } else {
+      return (n / 1000000000).toFixed(2) + 'B'; // Billions, for fun :)
+    }
+  }
 
-          if (data.error) {
-            countEl.textContent = 'N/A';
-            errorEl.textContent = data.error;
-            return;
-          }
+  async function fetchSubscriberCount() {
+    const countEl   = document.getElementById('count');
+    const updatedEl = document.getElementById('updated');
+    const errorEl   = document.getElementById('error');
 
-          if (!data.subscriberCount) {
-            countEl.textContent = 'N/A';
-            errorEl.textContent = 'No subscriberCount in response';
-            return;
-          }
+    try {
+      errorEl.textContent = '';
 
-          countEl.textContent = data.subscriberCount.toString();
+      const resp = await fetch(BACKEND_URL, { cache: 'no-store' });
+      const data = await resp.json();
 
-          const now = new Date();
-          updatedEl.textContent = 'Last updated: ' + now.toLocaleTimeString();
-        } catch (err) {
-          console.error(err);
-          countEl.textContent = '–';
-          errorEl.textContent = 'Error talking to backend';
-        }
+      if (data.error) {
+        countEl.textContent = 'N/A';
+        errorEl.textContent = data.error;
+        return;
       }
 
-      // Initial load and refresh every 60 seconds
-      fetchSubscriberCount();
-      setInterval(fetchSubscriberCount, 60000);
-    </script>
+      if (!data.subscriberCount) {
+        countEl.textContent = 'N/A';
+        errorEl.textContent = 'No subscriberCount in response';
+        return;
+      }
+
+      // Format count (1.23K)
+      const formatted = formatSubs(data.subscriberCount);
+      countEl.textContent = formatted;
+
+      // Timestamp
+      const now = new Date();
+      updatedEl.textContent = 'Last updated: ' + now.toLocaleTimeString();
+
+    } catch (err) {
+      console.error(err);
+      countEl.textContent = '–';
+      errorEl.textContent = 'Error contacting backend';
+    }
+  }
+
+  // Initial load
+  fetchSubscriberCount();
+
+  // Update every 60 seconds
+  setInterval(fetchSubscriberCount, 60000);
+</script>
+    
   </body>
 </html>
