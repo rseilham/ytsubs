@@ -4,8 +4,6 @@
     <meta charset="utf-8">
     <title>ljs2023 Subs</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
-
-    <!-- Optional: makes iOS treat this nicer when added to Home Screen -->
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black">
     <meta name="apple-mobile-web-app-title" content="ljs2023 Subs">
@@ -37,7 +35,7 @@
       .yt-badge {
         width: 40px;
         height: 28px;
-        background: #ff0000; /* YouTube red */
+        background: #ff0000;
         border-radius: 6px;
         display: flex;
         align-items: center;
@@ -56,28 +54,55 @@
         font-size: 24px;
         font-weight: 700;
         letter-spacing: 0.03em;
-        color: #ff0000; /* YouTube red for text */
+        color: #ff0000;
       }
 
-#count {
-  font-size: 96px;      /* fallback */
-  font-weight: 800;
-  margin: 24px 0 8px;
-  line-height: 1;
-}
+      #count {
+        font-size: 96px;
+        font-weight: 800;
+        margin: 24px 0 8px;
+        line-height: 1;
+      }
 
-/* Landscape: make the number fill ~50% of the screen height */
-@media (orientation: landscape) {
-  #count {
-    font-size: 67vh;    /* 45% of viewport height */
-    margin: 8px 0 4px;
-  }
-}
+      @media (orientation: landscape) {
+        #count {
+          font-size: 45vh;
+          margin: 8px 0 4px;
+        }
+      }
+
+      .stats-row {
+        display: flex;
+        justify-content: center;
+        gap: 32px;
+        margin-top: 12px;
+      }
+
+      .stat-box {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 4px;
+      }
+
+      .stat-value {
+        font-size: 28px;
+        font-weight: 700;
+        color: #ffffff;
+      }
+
+      .stat-label {
+        font-size: 12px;
+        font-weight: 500;
+        color: #aaaaaa;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+      }
 
       #updated {
         font-size: 14px;
-        margin-top: 6px;
-        color: #aaaaaa; /* light gray */
+        margin-top: 16px;
+        color: #aaaaaa;
       }
 
       #error {
@@ -99,72 +124,70 @@
     </div>
 
     <div id="count">–</div>
+
+    <div class="stats-row">
+      <div class="stat-box">
+        <div class="stat-value" id="view-count">–</div>
+        <div class="stat-label">Total Views</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-value" id="video-count">–</div>
+        <div class="stat-label">Videos</div>
+      </div>
+    </div>
+
     <div id="updated">Last updated: —</div>
     <div id="error"></div>
 
-<script>
-  // Your Apps Script Web App URL (no API key here)
+    <script>
       const BACKEND_URL = 'https://script.google.com/macros/s/AKfycbySjshcmfGbIRfiGXmwChLhB4Csa5L-rENGPd8gdG7newEkcM85ZdqfkVm6YmNS_EYh/exec';
 
-  // Format subscribers into YouTube-style display: 1.23K, 4.8M, etc.
-  function formatSubs(n) {
-    n = Number(n);
-
-    if (n < 1000) {
-      return n.toString();                      // 0–999 → exact number
-    } else if (n < 1000000) {
-      return (n / 1000).toFixed(2) + 'K';       // 1,000–999,999 → "X.XXK"
-    } else if (n < 1000000000) {
-      return (n / 1000000).toFixed(2) + 'M';    // 1,000,000–999,999,999 → "X.XXM"
-    } else {
-      return (n / 1000000000).toFixed(2) + 'B'; // Billions, for fun :)
-    }
-  }
-
-  async function fetchSubscriberCount() {
-    const countEl   = document.getElementById('count');
-    const updatedEl = document.getElementById('updated');
-    const errorEl   = document.getElementById('error');
-
-    try {
-      errorEl.textContent = '';
-
-      const resp = await fetch(BACKEND_URL, { cache: 'no-store' });
-      const data = await resp.json();
-
-      if (data.error) {
-        countEl.textContent = 'N/A';
-        errorEl.textContent = data.error;
-        return;
+      function formatNumber(n) {
+        return Number(n).toLocaleString();
       }
 
-      if (!data.subscriberCount) {
-        countEl.textContent = 'N/A';
-        errorEl.textContent = 'No subscriberCount in response';
-        return;
+      function formatSubs(n) {
+        n = Number(n);
+        if (n < 1000) return n.toString();
+        else if (n < 1000000) return (n / 1000).toFixed(2) + 'K';
+        else if (n < 1000000000) return (n / 1000000).toFixed(2) + 'M';
+        else return (n / 1000000000).toFixed(2) + 'B';
       }
 
-      // Format count (1.23K)
-      const formatted = formatSubs(data.subscriberCount);
-      countEl.textContent = formatted;
+      async function fetchSubscriberCount() {
+        const countEl      = document.getElementById('count');
+        const viewCountEl  = document.getElementById('view-count');
+        const videoCountEl = document.getElementById('video-count');
+        const updatedEl    = document.getElementById('updated');
+        const errorEl      = document.getElementById('error');
 
-      // Timestamp
-      const now = new Date();
-      updatedEl.textContent = 'Last updated: ' + now.toLocaleTimeString();
+        try {
+          errorEl.textContent = '';
+          const resp = await fetch(BACKEND_URL, { cache: 'no-store' });
+          const data = await resp.json();
 
-    } catch (err) {
-      console.error(err);
-      countEl.textContent = '–';
-      errorEl.textContent = 'Error contacting backend';
-    }
-  }
+          if (data.error) {
+            countEl.textContent = 'N/A';
+            errorEl.textContent = data.error;
+            return;
+          }
 
-  // Initial load
-  fetchSubscriberCount();
+          countEl.textContent      = data.subscriberCount ? formatSubs(data.subscriberCount) : 'N/A';
+          viewCountEl.textContent  = data.viewCount  ? formatNumber(data.viewCount)  : 'N/A';
+          videoCountEl.textContent = data.videoCount ? formatNumber(data.videoCount) : 'N/A';
 
-  // Update every 60 seconds
-  setInterval(fetchSubscriberCount, 60000);
-</script>
-    
+          const now = new Date();
+          updatedEl.textContent = 'Last updated: ' + now.toLocaleTimeString();
+
+        } catch (err) {
+          console.error(err);
+          countEl.textContent = '–';
+          errorEl.textContent = 'Error contacting backend';
+        }
+      }
+
+      fetchSubscriberCount();
+      setInterval(fetchSubscriberCount, 60000);
+    </script>
   </body>
 </html>
