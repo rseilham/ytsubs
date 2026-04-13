@@ -8,139 +8,501 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black">
     <meta name="apple-mobile-web-app-title" content="ljs2023 Subs">
 
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@900&family=Exo+2:wght@400;700&family=Bebas+Neue&family=Rajdhani:wght@700&family=Russo+One&display=swap" rel="stylesheet">
+
     <style>
-      body {
-        font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
-        background: #000;
-        color: #fff;
-        text-align: center;
-        margin: 0;
-        padding-top: 30px;
+        --accent: #ff0000;
+        --bg: #0a0a0a;
+        --scanline: rgba(255,255,255,0.015);
+        --count-font: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+        --ui-font: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+        --count-transform: none;
+        --count-spacing: -0.02em;
       }
 
-      .header {
+      * { box-sizing: border-box; margin: 0; padding: 0; }
+
+      body {
+        font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+        background: var(--bg);
+        color: #fff;
+        text-align: center;
+        min-height: 100vh;
+        overflow-x: hidden;
+        transition: background 0.5s;
+      }
+
+      /* Subtle scanline texture */
+      body::before {
+        content: '';
+        position: fixed;
+        inset: 0;
+        background: repeating-linear-gradient(
+          0deg,
+          transparent,
+          transparent 2px,
+          var(--scanline) 2px,
+          var(--scanline) 4px
+        );
+        pointer-events: none;
+        z-index: 0;
+        transition: background 0.5s;
+      }
+
+      /* Skin overlay for radial bg effect */
+      body::after {
+        content: '';
+        position: fixed;
+        inset: 0;
+        background: var(--skin-overlay, none);
+        pointer-events: none;
+        z-index: 0;
+        transition: background 0.5s;
+      }
+
+      .page {
+        position: relative;
+        z-index: 1;
         display: flex;
         flex-direction: column;
         align-items: center;
-        gap: 12px;
-        padding: 0 16px;
+        padding: 40px 20px 40px;
+        min-height: 100vh;
       }
 
-      .logo-row {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-      }
-
-      .yt-badge {
-        width: 40px;
-        height: 28px;
-        background: #ff0000;
-        border-radius: 6px;
+      /* ── Header ── */
+      .header {
         display: flex;
         align-items: center;
         justify-content: center;
+        gap: 12px;
+        width: 100%;
+        position: relative;
+      }
+
+      .yt-badge {
+        width: 44px;
+        height: 30px;
+        background: var(--accent);
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: background 0.4s;
+        box-shadow: 0 0 18px color-mix(in srgb, var(--accent) 60%, transparent);
       }
 
       .yt-badge .triangle {
-        width: 0;
-        height: 0;
-        border-left: 14px solid #ffffff;
+        width: 0; height: 0;
+        border-left: 14px solid #fff;
         border-top: 9px solid transparent;
         border-bottom: 9px solid transparent;
       }
 
-      .title-text {
-        font-size: 24px;
-        font-weight: 700;
-        letter-spacing: 0.03em;
-        color: #ff0000;
+      /* ── Color picker button ── */
+      .palette-btn {
+        position: absolute;
+        right: 0;
+        top: 50%;
+        transform: translateY(-50%);
+        background: rgba(255,255,255,0.07);
+        border: 1px solid rgba(255,255,255,0.12);
+        border-radius: 50%;
+        width: 36px;
+        height: 36px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: background 0.2s;
       }
 
-      #count {
-        font-size: 96px;
-        font-weight: 800;
-        margin: 24px 0 8px;
+      .palette-btn:hover { background: rgba(255,255,255,0.14); }
+
+      .palette-btn svg {
+        width: 18px; height: 18px;
+        fill: rgba(255,255,255,0.6);
+      }
+
+      /* ── Color picker popup ── */
+      .color-popup {
+        display: none;
+        position: absolute;
+        top: 56px;
+        right: 0;
+        background: #1a1a1a;
+        border: 1px solid rgba(255,255,255,0.12);
+        border-radius: 14px;
+        padding: 12px;
+        flex-direction: column;
+        gap: 8px;
+        width: 230px;
+        z-index: 100;
+        box-shadow: 0 8px 32px rgba(0,0,0,0.6);
+      }
+
+      .color-popup.open { display: flex; }
+
+      .popup-section-label {
+        font-size: 10px;
+        font-weight: 700;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: rgba(255,255,255,0.35);
+        text-align: left;
+        padding: 0 2px;
+      }
+
+      .swatch-row {
+        display: flex;
+        gap: 8px;
+        justify-content: space-between;
+      }
+
+      .popup-divider {
+        height: 1px;
+        background: rgba(255,255,255,0.08);
+        margin: 2px 0;
+      }
+
+      .swatch {
+        width: 28px;
+        height: 28px;
+        border-radius: 50%;
+        cursor: pointer;
+        border: 2px solid transparent;
+        transition: transform 0.15s, border-color 0.15s;
+        flex-shrink: 0;
+      }
+
+      .swatch:hover { transform: scale(1.15); }
+      .swatch.active { border-color: #fff; }
+
+      .font-row {
+        display: flex;
+        gap: 6px;
+      }
+
+      .font-btn {
+        flex: 1;
+        padding: 6px 4px;
+        background: rgba(255,255,255,0.05);
+        border: 1px solid rgba(255,255,255,0.1);
+        border-radius: 8px;
+        color: rgba(255,255,255,0.6);
+        font-size: 11px;
+        cursor: pointer;
+        transition: background 0.15s, border-color 0.15s, color 0.15s;
+        text-align: center;
+      }
+
+      .font-btn:hover { background: rgba(255,255,255,0.1); }
+      .font-btn.active {
+        border-color: rgba(255,255,255,0.5);
+        color: #fff;
+        background: rgba(255,255,255,0.1);
+      }
+
+      /* ── Main number ── */
+      .count-wrap {
+        margin: 32px 0 0;
         line-height: 1;
       }
 
-      @media (orientation: landscape) {
-        #count {
-          font-size: 45vh;
-          margin: 8px 0 4px;
-        }
+      #count {
+        font-size: clamp(80px, 22vw, 160px);
+        font-weight: 900;
+        letter-spacing: var(--count-spacing);
+        font-family: var(--count-font);
+        text-transform: var(--count-transform);
+        color: #fff;
+        text-shadow: 0 0 60px color-mix(in srgb, var(--accent) 40%, transparent);
+        transition: text-shadow 0.4s, font-family 0.1s, letter-spacing 0.3s;
       }
 
+      /* ── Stats row ── */
       .stats-row {
         display: flex;
-        justify-content: center;
-        gap: 32px;
-        margin-top: 12px;
+        gap: 16px;
+        margin-top: 32px;
+        width: 100%;
+        max-width: 360px;
       }
 
       .stat-box {
+        flex: 1;
+        background: rgba(255,255,255,0.04);
+        border: 1px solid rgba(255,255,255,0.08);
+        border-radius: 14px;
+        padding: 10px 10px;
         display: flex;
         flex-direction: column;
+        gap: 3px;
+      }
+
+      .stat-top {
+        display: flex;
         align-items: center;
-        gap: 4px;
+        justify-content: center;
+        gap: 6px;
+      }
+
+      .stat-icon {
+        font-size: 16px;
+        line-height: 1;
       }
 
       .stat-value {
-        font-size: 28px;
+        font-size: 22px;
         font-weight: 700;
-        color: #ffffff;
+        color: #fff;
+        letter-spacing: 0.02em;
+        font-family: var(--ui-font);
+        transition: font-family 0.1s;
+      }
+
+      .title-text {
+        font-size: 22px;
+        font-weight: 700;
+        letter-spacing: 0.06em;
+        color: var(--accent);
+        text-transform: uppercase;
+        font-family: var(--ui-font);
+        transition: color 0.4s, font-family 0.1s;
       }
 
       .stat-label {
-        font-size: 12px;
-        font-weight: 500;
-        color: #aaaaaa;
+        font-size: 11px;
+        font-weight: 600;
+        letter-spacing: 0.12em;
         text-transform: uppercase;
-        letter-spacing: 0.08em;
+        color: rgba(255,255,255,0.4);
       }
 
+      /* ── Divider line ── */
+      .divider {
+        display: none;
+      }
+
+      /* ── Footer ── */
       #updated {
-        font-size: 14px;
-        margin-top: 16px;
-        color: #aaaaaa;
+        font-size: 10px;
+        margin-top: 10px;
+        color: rgba(255,255,255,0.15);
+        letter-spacing: 0.04em;
       }
 
       #error {
-        font-size: 14px;
+        font-size: 13px;
         margin-top: 8px;
         color: #ff6666;
-        min-height: 20px;
+        min-height: 18px;
+      }
+
+      @keyframes pulse {
+        0%, 100% { opacity: 1; transform: scale(1); }
+        50% { opacity: 0.4; transform: scale(0.7); }
+      }
+
+      /* Landscape tweaks */
+      @media (orientation: landscape) {
+        #count { font-size: 38vh; }
+        .page { padding-top: 20px; }
       }
     </style>
   </head>
   <body>
-    <div class="header">
-      <div class="logo-row">
-        <div class="yt-badge">
-          <div class="triangle"></div>
+    <div class="page">
+
+      <div class="header">
+        <div class="yt-badge"><div class="triangle"></div></div>
+        <div class="title-text">ljs2023</div>
+
+        <div class="palette-btn" id="paletteBtn" title="Change color">
+          <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10c.55 0 1-.45 1-1 0-.28-.1-.53-.27-.72-.16-.19-.26-.44-.26-.72 0-.55.45-1 1-1h1.17c3.11 0 5.63-2.52 5.63-5.63C20.27 6.3 16.6 2 12 2zm-5.5 9c-.83 0-1.5-.67-1.5-1.5S5.67 8 6.5 8 8 8.67 8 9.5 7.33 11 6.5 11zm3-4C8.67 7 8 6.33 8 5.5S8.67 4 9.5 4s1.5.67 1.5 1.5S10.33 7 9.5 7zm5 0c-.83 0-1.5-.67-1.5-1.5S13.67 4 14.5 4s1.5.67 1.5 1.5S15.33 7 14.5 7zm3 4c-.83 0-1.5-.67-1.5-1.5S16.67 8 17.5 8s1.5.67 1.5 1.5S18.33 11 17.5 11z"/>
+          </svg>
         </div>
-        <div class="title-text">ljs2023 Subs</div>
+
+        <div class="color-popup" id="colorPopup"></div>
       </div>
+
+      <div class="count-wrap">
+        <div id="count">–</div>
+      </div>
+
+      <div class="stats-row">
+        <div class="stat-box">
+          <div class="stat-top"><span class="stat-icon">👁</span><span class="stat-value" id="view-count">–</span></div>
+          <div class="stat-label">Total Views</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-top"><span class="stat-icon">🎬</span><span class="stat-value" id="video-count">–</span></div>
+          <div class="stat-label">Videos</div>
+        </div>
+      </div>
+
+      <div class="divider"></div>
+      <div id="updated">Waiting for data…</div>
+      <div id="error"></div>
+
     </div>
-
-    <div id="count">–</div>
-
-    <div class="stats-row">
-      <div class="stat-box">
-        <div class="stat-value" id="view-count">–</div>
-        <div class="stat-label">Total Views</div>
-      </div>
-      <div class="stat-box">
-        <div class="stat-value" id="video-count">–</div>
-        <div class="stat-label">Videos</div>
-      </div>
-    </div>
-
-    <div id="updated">Last updated: —</div>
-    <div id="error"></div>
 
     <script>
       const BACKEND_URL = 'https://script.google.com/macros/s/AKfycbySjshcmfGbIRfiGXmwChLhB4Csa5L-rENGPd8gdG7newEkcM85ZdqfkVm6YmNS_EYh/exec';
+
+      const PLAIN_COLORS = [
+        { name: 'Red',    hex: '#ff0000' },
+        { name: 'Blue',   hex: '#00aaff' },
+        { name: 'Green',  hex: '#00ff88' },
+        { name: 'Purple', hex: '#a855f7' },
+        { name: 'Pink',   hex: '#ff2d78' },
+        { name: 'Orange', hex: '#ff6a00' },
+      ];
+
+      const SKIN_COLORS = [
+        { name: 'Red',    hex: '#ff0000', bg: '#0d0000', scanline: 'rgba(255,0,0,0.04)',     overlay: 'radial-gradient(ellipse at 50% 30%, rgba(180,0,0,0.18) 0%, transparent 70%)' },
+        { name: 'Blue',   hex: '#00aaff', bg: '#00080f', scanline: 'rgba(0,150,255,0.05)',   overlay: 'radial-gradient(ellipse at 50% 30%, rgba(0,100,200,0.2) 0%, transparent 70%)' },
+        { name: 'Green',  hex: '#00ff88', bg: '#000d05', scanline: 'rgba(0,255,100,0.05)',   overlay: 'radial-gradient(ellipse at 50% 30%, rgba(0,160,60,0.18) 0%, transparent 70%)' },
+        { name: 'Purple', hex: '#a855f7', bg: '#08000f', scanline: 'rgba(160,80,255,0.05)', overlay: 'radial-gradient(ellipse at 50% 30%, rgba(100,0,180,0.22) 0%, transparent 70%)' },
+        { name: 'Pink',   hex: '#ff2d78', bg: '#0f0008', scanline: 'rgba(255,0,100,0.05)',  overlay: 'radial-gradient(ellipse at 50% 30%, rgba(200,0,80,0.2) 0%, transparent 70%)' },
+        { name: 'Orange', hex: '#ff6a00', bg: '#0f0600', scanline: 'rgba(255,100,0,0.05)',  overlay: 'radial-gradient(ellipse at 50% 30%, rgba(180,60,0,0.2) 0%, transparent 70%)' },
+      ];
+
+      const FONTS = [
+        { name: 'Default',  label: 'Default',  value: "system-ui, -apple-system, sans-serif", uiFont: "system-ui, -apple-system, sans-serif", spacing: '-0.02em' },
+        { name: 'Orbitron', label: 'Orbitron', value: "'Orbitron', sans-serif",                uiFont: "'Exo 2', sans-serif",                  spacing: '0.04em'  },
+        { name: 'Rajdhani', label: 'Rajdhani', value: "'Rajdhani', sans-serif",                uiFont: "'Rajdhani', sans-serif",               spacing: '0.05em'  },
+      ];
+
+      function getCookie(name) {
+        const match = document.cookie.match(new RegExp('(?:^|; )' + name + '=([^;]*)'));
+        return match ? decodeURIComponent(match[1]) : null;
+      }
+
+      function setCookie(name, value, days) {
+        const expires = new Date(Date.now() + days * 864e5).toUTCString();
+        document.cookie = name + '=' + encodeURIComponent(value) + '; expires=' + expires + '; path=/';
+      }
+
+      function applyPlain(hex) {
+        const r = document.documentElement;
+        r.style.setProperty('--accent', hex);
+        r.style.setProperty('--bg', '#0a0a0a');
+        r.style.setProperty('--scanline', 'rgba(255,255,255,0.015)');
+        r.style.setProperty('--skin-overlay', 'none');
+      }
+
+      function applyColor(c) {
+        const r = document.documentElement;
+        r.style.setProperty('--accent', c.hex);
+        r.style.setProperty('--bg', c.bg);
+        r.style.setProperty('--scanline', c.scanline);
+        r.style.setProperty('--skin-overlay', c.overlay);
+      }
+
+      function applyFont(f) {
+        const r = document.documentElement;
+        r.style.setProperty('--count-font', f.value);
+        r.style.setProperty('--ui-font', f.uiFont);
+        r.style.setProperty('--count-spacing', f.spacing);
+      }
+
+      function buildPicker() {
+        const popup = document.getElementById('colorPopup');
+        const btn   = document.getElementById('paletteBtn');
+
+        const savedHex      = getCookie('accentColor') || '#ff0000';
+        const savedColorType = getCookie('colorType')  || 'plain';
+        const savedFont     = getCookie('fontName')    || 'Default';
+
+        // Restore on load
+        if (savedColorType === 'skin') {
+          const sc = SKIN_COLORS.find(c => c.hex === savedHex) || SKIN_COLORS[0];
+          applyColor(sc);
+        } else {
+          applyPlain(savedHex);
+        }
+        applyFont(FONTS.find(f => f.name === savedFont) || FONTS[0]);
+
+        let allColorSwatches = [];
+        let allSkinSwatches  = [];
+        let allFontBtns      = [];
+
+        function makeSwatchRow(colors, type) {
+          const row = document.createElement('div');
+          row.className = 'swatch-row';
+          const arr = type === 'skin' ? allSkinSwatches : allColorSwatches;
+          colors.forEach(c => {
+            const sw = document.createElement('div');
+            const isActive = c.hex === savedHex && savedColorType === type;
+            sw.className = 'swatch' + (isActive ? ' active' : '');
+            sw.style.background = c.hex;
+            sw.title = c.name;
+            sw.addEventListener('click', () => {
+              if (type === 'skin') applyColor(c); else applyPlain(c.hex);
+              setCookie('accentColor', c.hex, 365);
+              setCookie('colorType', type, 365);
+              [...allColorSwatches, ...allSkinSwatches].forEach(s => s.classList.remove('active'));
+              sw.classList.add('active');
+              popup.classList.remove('open');
+            });
+            arr.push(sw);
+            row.appendChild(sw);
+          });
+          return row;
+        }
+
+        function addDivider() {
+          const d = document.createElement('div');
+          d.className = 'popup-divider';
+          popup.appendChild(d);
+        }
+
+        function addLabel(text) {
+          const l = document.createElement('div');
+          l.className = 'popup-section-label';
+          l.textContent = text;
+          popup.appendChild(l);
+        }
+
+        addLabel('Colors');
+        popup.appendChild(makeSwatchRow(PLAIN_COLORS, 'plain'));
+        addDivider();
+        addLabel('Skins');
+        popup.appendChild(makeSwatchRow(SKIN_COLORS, 'skin'));
+        addDivider();
+        addLabel('Font');
+
+        const fontRow = document.createElement('div');
+        fontRow.className = 'font-row';
+        FONTS.forEach(f => {
+          const fb = document.createElement('div');
+          fb.className = 'font-btn' + (f.name === savedFont ? ' active' : '');
+          fb.textContent = f.label;
+          fb.style.fontFamily = f.value;
+          fb.addEventListener('click', () => {
+            applyFont(f);
+            setCookie('fontName', f.name, 365);
+            allFontBtns.forEach(b => b.classList.remove('active'));
+            fb.classList.add('active');
+            popup.classList.remove('open');
+          });
+          allFontBtns.push(fb);
+          fontRow.appendChild(fb);
+        });
+        popup.appendChild(fontRow);
+
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          popup.classList.toggle('open');
+        });
+
+        document.addEventListener('click', () => popup.classList.remove('open'));
+        popup.addEventListener('click', e => e.stopPropagation());
+      }
 
       function formatNumber(n) {
         return Number(n).toLocaleString();
@@ -149,17 +511,17 @@
       function formatSubs(n) {
         n = Number(n);
         if (n < 1000) return n.toString();
-        else if (n < 1000000) return (n / 1000).toFixed(2) + 'K';
-        else if (n < 1000000000) return (n / 1000000).toFixed(2) + 'M';
-        else return (n / 1000000000).toFixed(2) + 'B';
+        if (n < 1000000) return (n / 1000).toFixed(2) + 'K';
+        if (n < 1000000000) return (n / 1000000).toFixed(2) + 'M';
+        return (n / 1000000000).toFixed(2) + 'B';
       }
 
-      async function fetchSubscriberCount() {
-        const countEl      = document.getElementById('count');
-        const viewCountEl  = document.getElementById('view-count');
-        const videoCountEl = document.getElementById('video-count');
-        const updatedEl    = document.getElementById('updated');
-        const errorEl      = document.getElementById('error');
+      async function fetchData() {
+        const countEl        = document.getElementById('count');
+        const viewCountEl    = document.getElementById('view-count');
+        const videoCountEl   = document.getElementById('video-count');
+        const updatedEl      = document.getElementById('updated');
+        const errorEl        = document.getElementById('error');
 
         try {
           errorEl.textContent = '';
@@ -172,12 +534,13 @@
             return;
           }
 
-          countEl.textContent      = data.subscriberCount ? formatSubs(data.subscriberCount) : 'N/A';
+          const subFormatted = data.subscriberCount ? formatSubs(data.subscriberCount) : 'N/A';
+          countEl.textContent     = subFormatted;
           viewCountEl.textContent  = data.viewCount  ? formatNumber(data.viewCount)  : 'N/A';
           videoCountEl.textContent = data.videoCount ? formatNumber(data.videoCount) : 'N/A';
 
           const now = new Date();
-          updatedEl.textContent = 'Last updated: ' + now.toLocaleTimeString();
+          updatedEl.textContent = 'Updated ' + now.toLocaleTimeString();
 
         } catch (err) {
           console.error(err);
@@ -186,8 +549,9 @@
         }
       }
 
-      fetchSubscriberCount();
-      setInterval(fetchSubscriberCount, 60000);
+      buildPicker();
+      fetchData();
+      setInterval(fetchData, 60000);
     </script>
   </body>
 </html>
